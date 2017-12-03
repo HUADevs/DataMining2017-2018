@@ -1,9 +1,10 @@
 from sklearn.metrics.classification import accuracy_score, precision_score, recall_score, confusion_matrix, f1_score
 from preparation import read_data, impute_missing_values, preprocessing
 from sklearn.model_selection import train_test_split
+from sklearn.neural_network import MLPClassifier
 
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
-from sklearn.ensemble import GradientBoostingClassifier, AdaBoostClassifier
+from sklearn.ensemble import GradientBoostingClassifier, AdaBoostClassifier, BaggingClassifier, ExtraTreesClassifier
 from sklearn.neighbors import KNeighborsClassifier, RadiusNeighborsClassifier
 from sklearn.gaussian_process import GaussianProcessClassifier
 from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
@@ -15,26 +16,29 @@ from sklearn.linear_model import SGDClassifier
 
 def classification(pp='Y', clf='Tree', random=0, impute_values=True, remove_outliers=True, scale=True, best_features=True):
     classifiers = {
-        'Tree': DecisionTreeClassifier(random_state=0),
+        'Tree': DecisionTreeClassifier(random_state=0, min_samples_split=10, class_weight='balanced'),
         'KN': KNeighborsClassifier(n_neighbors=5),
         'RN': RadiusNeighborsClassifier(radius=1.0),
         'GP': GaussianProcessClassifier(),
-        'GB': GradientBoostingClassifier(n_estimators=100, learning_rate=1.0, max_depth=1, random_state=0),
+        'GB': GradientBoostingClassifier(n_estimators=100, learning_rate=1.0, max_depth=3, random_state=0),
         'GNB': GaussianNB(),
         'MNB': MultinomialNB(),
         'BNB': BernoulliNB(),
-        'RF': RandomForestClassifier(),
+        'RF': RandomForestClassifier(n_estimators=10),
+        'ET': ExtraTreesClassifier(n_estimators=10),
         'NC': NearestCentroid(),
-        'SVC': SVC(),
+        'SVC': SVC(class_weight='balanced'),
         'NuSVC': NuSVC(),
         'LSVC': LinearSVC(),
-        'SGDC': SGDClassifier(),
+        'SGDC': SGDClassifier(class_weight='balanced', random_state=0),
         'DTR': DecisionTreeRegressor(),
-        'ADA': AdaBoostClassifier()
+        'ADA': AdaBoostClassifier(n_estimators=100),
+        'BC': BaggingClassifier(n_estimators=10),
+        'MLP': MLPClassifier()
     }
 
     if pp == 'N':
-        x, y = read_data(csv_file='../companydata.csv')
+        x, y = read_data(csv_file='companydata.csv')
         x = impute_missing_values(x)
     else:
         x, y = preprocessing(impute_values, remove_outliers, scale, best_features)
@@ -62,5 +66,5 @@ def scores(y_test, predictions, pp, clf):
     print()
 
 if __name__ == '__main__':
-    classification(pp='N', clf='RF')
-    classification(clf='RF')
+    classification(pp='N', clf='BC')
+    classification(clf='BC', best_features=False)
