@@ -106,12 +106,11 @@ def preprocessing(impute_values=True, remove_outliers=True, scale=True, best_fea
 
     if scale:
         x = normalize_data(x, scaler='Standard')  # check column X60 for validation
-        print(x)
+        #print(x)
 
     print('Dataset\'s columns before feature selection: {shape}'.format(shape=x.shape[1]))
     if best_features:
-        x = select_best_features(x, y, n_features=20,
-                             method='chi2')  # methods={chi2, f_classif, mutual_info_classif}
+        x = select_best_features(x, y, n_features=20, method='f_classif')  # methods={chi2, f_classif, mutual_info_classif}
         print('Dataset\'s columns after feature selection: {shape}'.format(shape=x.shape[1]))
 
     # print(x.head())
