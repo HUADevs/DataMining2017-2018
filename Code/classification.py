@@ -1,6 +1,6 @@
 from sklearn.metrics.classification import accuracy_score, precision_score, recall_score, confusion_matrix, f1_score
 from preparation import read_data, impute_missing_values, preprocessing
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.neural_network import MLPClassifier
 
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
@@ -53,6 +53,7 @@ def classification(pp='Y', clf='Tree', random=0, impute_values=True, remove_outl
     predictions = est.predict(x_test)
 
     scores(y_test, predictions, pp, clf)
+    cross_val_scores(est, x, y, 5)
 
 
 def scores(y_test, predictions, pp, clf):
@@ -70,6 +71,15 @@ def scores(y_test, predictions, pp, clf):
     print()
 
 
+def cross_val_scores(estimator, x, y, k_fold):
+    print('Cross validation scores:')
+    print('Accuracy score = {accuracy}'.format(accuracy=cross_val_score(estimator, x, y, cv=k_fold, scoring='accuracy').mean()))
+    print('Precision score = {precision}'.format(precision=cross_val_score(estimator, x, y, cv=k_fold, scoring='precision').mean()))
+    print('Recall score = {recall}'.format(recall=cross_val_score(estimator, x, y, cv=k_fold, scoring='recall').mean()))
+    print('F1 Score = {f1score}'.format(f1score=cross_val_score(estimator, x, y, cv=k_fold, scoring='f1').mean()))
+    print()
+
+
 if __name__ == '__main__':
-    classification(pp='N', clf='BNB')
-    classification(clf='BNB', remove_outliers=True, scale=False, best_features=False)
+    classification(pp='N', clf='GB')
+    classification(clf='GB', remove_outliers=True, scale=False, best_features=False)
