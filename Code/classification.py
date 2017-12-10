@@ -14,13 +14,17 @@ from sklearn.svm import SVC, NuSVC, LinearSVC
 from sklearn.linear_model import SGDClassifier
 
 
-def classification(pp='Y', clf='Tree', random=0, impute_values=True, remove_outliers=True, scale=True, best_features=True):
+def classification(pp='Y', clf='Tree', random=0, impute_values=True, remove_outliers=True, scale=True,
+                   best_features=True):
     classifiers = {
-        'Tree': DecisionTreeClassifier(random_state=0, min_samples_split=10, class_weight='balanced'),
+        'Tree': DecisionTreeClassifier(criterion='entropy', splitter='best', max_depth=None, random_state=random,
+                                       min_samples_split=40, max_features=None, class_weight=None,
+                                       presort=True),
         'KN': KNeighborsClassifier(n_neighbors=5),
         'RN': RadiusNeighborsClassifier(radius=1.0),
         'GP': GaussianProcessClassifier(),
-        'GB': GradientBoostingClassifier(n_estimators=100, learning_rate=1.0, max_depth=3, random_state=0),
+        'GB': GradientBoostingClassifier(loss='exponential', learning_rate=1.0, n_estimators=100,
+                                         criterion='friedman_mse', max_depth=3, random_state=0),
         'GNB': GaussianNB(),
         'MNB': MultinomialNB(),
         'BNB': BernoulliNB(),
@@ -32,7 +36,7 @@ def classification(pp='Y', clf='Tree', random=0, impute_values=True, remove_outl
         'LSVC': LinearSVC(),
         'SGDC': SGDClassifier(class_weight='balanced', random_state=0),
         'DTR': DecisionTreeRegressor(),
-        'ADA': AdaBoostClassifier(n_estimators=100),
+        'ADA': AdaBoostClassifier(n_estimators=100, random_state=random),
         'BC': BaggingClassifier(n_estimators=10),
         'MLP': MLPClassifier()
     }
@@ -42,7 +46,7 @@ def classification(pp='Y', clf='Tree', random=0, impute_values=True, remove_outl
         x = impute_missing_values(x)
     else:
         x, y = preprocessing(impute_values, remove_outliers, scale, best_features)
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=random)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=0)
 
     est = classifiers[clf]
     est.fit(x_train, y_train)
@@ -65,6 +69,7 @@ def scores(y_test, predictions, pp, clf):
     print(confusion_matrix(y_test, predictions))
     print()
 
+
 if __name__ == '__main__':
-    classification(pp='N', clf='BC')
-    classification(clf='BC', best_features=False)
+    classification(pp='N', clf='BNB')
+    classification(clf='BNB', remove_outliers=True, scale=False, best_features=False)
