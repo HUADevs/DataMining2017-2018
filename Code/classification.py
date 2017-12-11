@@ -4,7 +4,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.gaussian_process import GaussianProcessClassifier
 from sklearn.linear_model import SGDClassifier
 from sklearn.metrics.classification import accuracy_score, precision_score, recall_score, confusion_matrix, f1_score
-from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.model_selection import train_test_split, cross_validate
 from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
 from sklearn.neighbors import KNeighborsClassifier, RadiusNeighborsClassifier
 from sklearn.neighbors.nearest_centroid import NearestCentroid
@@ -39,7 +39,7 @@ def classification(pp='Y', clf='Tree', random=0, impute_values=True, remove_outl
         'ADA': AdaBoostClassifier(n_estimators=100, random_state=0),
         'BC': BaggingClassifier(n_estimators=10, random_state=0),
         'MLP': MLPClassifier(activation='logistic', learning_rate='adaptive'),
-        'EXGB': XGBClassifier()
+        # 'EXGB': XGBClassifier()
     }
 
     if pp == 'N':
@@ -73,16 +73,16 @@ def scores(y_test, predictions, pp, clf):
 
 
 def cross_val_scores(estimator, x, y, k_fold):
-    print('Cross validation scores:')
-    print('Accuracy score = {accuracy}'.format(
-        accuracy=cross_val_score(estimator, x, y, cv=k_fold, scoring='accuracy').mean()))
-    print('Precision score = {precision}'.format(
-        precision=cross_val_score(estimator, x, y, cv=k_fold, scoring='precision').mean()))
-    print('Recall score = {recall}'.format(recall=cross_val_score(estimator, x, y, cv=k_fold, scoring='recall').mean()))
-    print('F1 Score = {f1score}'.format(f1score=cross_val_score(estimator, x, y, cv=k_fold, scoring='f1').mean()))
+
+    cv = cross_validate(estimator, x, y, cv=k_fold, scoring=['accuracy', 'precision', 'recall', 'f1'])
+    print('{k_fold}-fold Cross validation scores:'.format(k_fold=k_fold))
+    print('Accuracy score = {accuracy}'.format(accuracy=cv['test_accuracy'].mean()))
+    print('Precision score = {precision}'.format(precision=cv['test_precision'].mean()))
+    print('Recall score = {recall}'.format(recall=cv['test_recall'].mean()))
+    print('F1 Score = {f1score}'.format(f1score=cv['test_f1'].mean()))
     print()
 
 
 if __name__ == '__main__':
-    #classification(pp='N', clf='EXGB')
+    classification(pp='N', clf='EXGB')
     classification(clf='EXGB', scale=True, best_features=False)
