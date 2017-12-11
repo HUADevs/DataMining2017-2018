@@ -1,17 +1,17 @@
-from sklearn.metrics.classification import accuracy_score, precision_score, recall_score, confusion_matrix, f1_score
 from preparation import read_data, impute_missing_values, preprocessing
-from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.neural_network import MLPClassifier
-
-from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.ensemble import GradientBoostingClassifier, AdaBoostClassifier, BaggingClassifier, ExtraTreesClassifier
-from sklearn.neighbors import KNeighborsClassifier, RadiusNeighborsClassifier
-from sklearn.gaussian_process import GaussianProcessClassifier
-from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.neighbors.nearest_centroid import NearestCentroid
-from sklearn.svm import SVC, NuSVC, LinearSVC
+from sklearn.gaussian_process import GaussianProcessClassifier
 from sklearn.linear_model import SGDClassifier
+from sklearn.metrics.classification import accuracy_score, precision_score, recall_score, confusion_matrix, f1_score
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
+from sklearn.neighbors import KNeighborsClassifier, RadiusNeighborsClassifier
+from sklearn.neighbors.nearest_centroid import NearestCentroid
+from sklearn.neural_network import MLPClassifier
+from sklearn.svm import SVC, NuSVC, LinearSVC
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+from xgboost import XGBClassifier
 
 
 def classification(pp='Y', clf='Tree', random=0, impute_values=True, remove_outliers=True, scale=True,
@@ -34,11 +34,12 @@ def classification(pp='Y', clf='Tree', random=0, impute_values=True, remove_outl
         'SVC': SVC(class_weight='balanced'),
         'NuSVC': NuSVC(),
         'LSVC': LinearSVC(),
-        'SGDC': SGDClassifier(class_weight='balanced', random_state=0),
-        'DTR': DecisionTreeRegressor(),
-        'ADA': AdaBoostClassifier(n_estimators=100, random_state=random),
-        'BC': BaggingClassifier(n_estimators=10),
-        'MLP': MLPClassifier()
+        'SGDC': SGDClassifier(random_state=0),
+        'DTR': DecisionTreeRegressor(random_state=0, presort=True),
+        'ADA': AdaBoostClassifier(n_estimators=100, random_state=0),
+        'BC': BaggingClassifier(n_estimators=10, random_state=0),
+        'MLP': MLPClassifier(activation='logistic', learning_rate='adaptive'),
+        'EXGB': XGBClassifier()
     }
 
     if pp == 'N':
@@ -46,14 +47,14 @@ def classification(pp='Y', clf='Tree', random=0, impute_values=True, remove_outl
         x = impute_missing_values(x)
     else:
         x, y = preprocessing(impute_values, remove_outliers, scale, best_features)
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=0)
 
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=0)
     est = classifiers[clf]
     est.fit(x_train, y_train)
     predictions = est.predict(x_test)
 
     scores(y_test, predictions, pp, clf)
-    cross_val_scores(est, x, y, 5)
+    cross_val_scores(est, x, y, 10)
 
 
 def scores(y_test, predictions, pp, clf):
@@ -73,13 +74,15 @@ def scores(y_test, predictions, pp, clf):
 
 def cross_val_scores(estimator, x, y, k_fold):
     print('Cross validation scores:')
-    print('Accuracy score = {accuracy}'.format(accuracy=cross_val_score(estimator, x, y, cv=k_fold, scoring='accuracy').mean()))
-    print('Precision score = {precision}'.format(precision=cross_val_score(estimator, x, y, cv=k_fold, scoring='precision').mean()))
+    print('Accuracy score = {accuracy}'.format(
+        accuracy=cross_val_score(estimator, x, y, cv=k_fold, scoring='accuracy').mean()))
+    print('Precision score = {precision}'.format(
+        precision=cross_val_score(estimator, x, y, cv=k_fold, scoring='precision').mean()))
     print('Recall score = {recall}'.format(recall=cross_val_score(estimator, x, y, cv=k_fold, scoring='recall').mean()))
     print('F1 Score = {f1score}'.format(f1score=cross_val_score(estimator, x, y, cv=k_fold, scoring='f1').mean()))
     print()
 
 
 if __name__ == '__main__':
-    classification(pp='N', clf='GB')
-    classification(clf='GB', remove_outliers=True, scale=False, best_features=False)
+    #classification(pp='N', clf='EXGB')
+    classification(clf='EXGB', scale=True, best_features=False)

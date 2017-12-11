@@ -1,23 +1,18 @@
-import numpy as np
+import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
-from sklearn.feature_selection import SelectKBest
-from sklearn.feature_selection import chi2, f_classif, mutual_info_classif
-
-from sklearn.preprocessing import Imputer
-
 from sklearn.covariance import EllipticEnvelope
 from sklearn.ensemble import IsolationForest
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import chi2, f_classif, mutual_info_classif
 from sklearn.neighbors import LocalOutlierFactor
-
+from sklearn.preprocessing import Imputer
 from sklearn.preprocessing import StandardScaler, MaxAbsScaler, MinMaxScaler, RobustScaler
 
 
 def read_data(csv_file):
     # import data from csv
     df = pd.read_csv(csv_file, na_values='?')
-
     # split to independent features (x) and target feature (y)
     x = df.drop('X65', axis=1)
     y = df['X65']
@@ -25,7 +20,7 @@ def read_data(csv_file):
     return x, y
 
 
-def impute_missing_values(x, strategy='most_frequent'):
+def impute_missing_values(x, strategy='mean'):
     # impute missing values
     imp = Imputer(missing_values='NaN', strategy=strategy, axis=0)
     print('Imputing missing values with strategy: {strategy}...'.format(strategy=strategy))
@@ -105,7 +100,7 @@ def preprocessing(impute_values=True, remove_outliers=True, scale=True, best_fea
         print('Dataset\'s rows after removing outliers: {shape}'.format(shape=x.shape[0]))
 
     if scale:
-        x = normalize_data(x, scaler='MinMax')  # check column X60 for validation
+        x = normalize_data(x, scaler='Standard')  # check column X60 for validation
         #print(x)
 
     print('Dataset\'s columns before feature selection: {shape}'.format(shape=x.shape[1]))
