@@ -1,4 +1,5 @@
-from preparation import read_data, impute_missing_values, preprocessing
+import numpy as np
+from Code.preparation import read_data, impute_missing_values, preprocessing
 from sklearn.ensemble import GradientBoostingClassifier, AdaBoostClassifier, BaggingClassifier, ExtraTreesClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.gaussian_process import GaussianProcessClassifier
@@ -16,6 +17,13 @@ from xgboost import XGBClassifier
 
 def classification(pp='Y', clf='Tree', random=0, impute_values=True, remove_outliers=True, scale=True,
                    best_features=True):
+    if pp == 'N':
+        x, y = read_data(csv_file='companydata.csv')
+        x = impute_missing_values(x)
+    else:
+        x, y = preprocessing(impute_values, remove_outliers, scale, best_features)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=0)
+
     classifiers = {
         'Tree': DecisionTreeClassifier(criterion='entropy', splitter='best', max_depth=None, random_state=random,
                                        min_samples_split=40, max_features=None, class_weight=None,
@@ -36,21 +44,20 @@ def classification(pp='Y', clf='Tree', random=0, impute_values=True, remove_outl
         'LSVC': LinearSVC(),
         'SGDC': SGDClassifier(random_state=0),
         'DTR': DecisionTreeRegressor(random_state=0, presort=True),
-        'ADA': AdaBoostClassifier(n_estimators=100, random_state=0),
-        'BC': BaggingClassifier(n_estimators=10, random_state=0),
+        'ADA': AdaBoostClassifier(n_estimators=500, random_state=0),
+        'BC': BaggingClassifier(n_estimators=50, random_state=0),
         'MLP': MLPClassifier(activation='logistic', learning_rate='adaptive'),
-        # 'EXGB': XGBClassifier()
+        'EXGB': XGBClassifier(max_depth=3, learning_rate=0.1, n_estimators=1000, objective="binary:logistic",
+                              min_child_weight=1, gamma=0, max_delta_step=0,
+                              scale_pos_weight=float(np.sum(y_train == 0)) / np.sum(y_train == 1), seed=0)
     }
 
-    if pp == 'N':
-        x, y = read_data(csv_file='companydata.csv')
-        x = impute_missing_values(x)
-    else:
-        x, y = preprocessing(impute_values, remove_outliers, scale, best_features)
-
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=0)
+    print(np.sum(y_train == 0), np.sum(y_train == 1), end='\n')
     est = classifiers[clf]
-    est.fit(x_train, y_train)
+    if(clf == 'EXGB'):
+        est.fit(x_train, y_train, eval_set=[(x_train, y_train), (x_test, y_test)], eval_metric='auc', verbose=True)
+    else:
+        est.fit(x_train, y_train)
     predictions = est.predict(x_test)
 
     scores(y_test, predictions, pp, clf)
@@ -73,7 +80,6 @@ def scores(y_test, predictions, pp, clf):
 
 
 def cross_val_scores(estimator, x, y, k_fold):
-
     cv = cross_validate(estimator, x, y, cv=k_fold, scoring=['accuracy', 'precision', 'recall', 'f1'])
     print('{k_fold}-fold Cross validation scores:'.format(k_fold=k_fold))
     print('Accuracy score = {accuracy}'.format(accuracy=cv['test_accuracy'].mean()))
