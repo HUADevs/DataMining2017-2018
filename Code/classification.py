@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from itertools import cycle
 
+from sklearn.preprocessing import label_binarize
+
 from Code.preparation import read_data, impute_missing_values, preprocessing
 from sklearn.ensemble import GradientBoostingClassifier, AdaBoostClassifier, BaggingClassifier, ExtraTreesClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -9,7 +11,7 @@ from sklearn.gaussian_process import GaussianProcessClassifier
 from sklearn.linear_model import SGDClassifier
 from sklearn.metrics.classification import accuracy_score, precision_score, recall_score, confusion_matrix, f1_score, \
     classification_report
-from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import roc_curve, auc, roc_auc_score
 from sklearn.model_selection import train_test_split, cross_validate
 from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
 from sklearn.neighbors import KNeighborsClassifier, RadiusNeighborsClassifier
@@ -31,13 +33,11 @@ def classification(pp='Y', clf='Tree', random=0, impute_values=True, remove_outl
 
     classifiers = {
         'Tree': DecisionTreeClassifier(criterion='entropy', splitter='best', max_depth=None, random_state=random,
-                                       min_samples_split=40, max_features=None, class_weight=None,
-                                       presort=True),
+                                       min_samples_split=40, presort=True),
         'KN': KNeighborsClassifier(n_neighbors=5),
         'RN': RadiusNeighborsClassifier(radius=1.0),
         'GP': GaussianProcessClassifier(),
-        'GB': GradientBoostingClassifier(loss='exponential', learning_rate=1.0, n_estimators=100,
-                                         criterion='friedman_mse', max_depth=3, random_state=0),
+        'GB': GradientBoostingClassifier(loss='exponential', n_estimators=1000, max_depth=3, random_state=0),
         'GNB': GaussianNB(),
         'MNB': MultinomialNB(),
         'BNB': BernoulliNB(),
@@ -66,7 +66,7 @@ def classification(pp='Y', clf='Tree', random=0, impute_values=True, remove_outl
     predictions = est.predict(x_test)
     scores(y_test, predictions, pp, clf)
     cross_val_scores(est, x, y, 10)
-    # roc_curve_plot(y_test, predictions)
+    roc_curve_plot(y_test, predictions)
 
 
 def scores(y_test, predictions, pp, clf):
@@ -80,13 +80,14 @@ def scores(y_test, predictions, pp, clf):
     print('Precision score = {precision}'.format(precision=precision_score(y_test, predictions)))
     print('Recall score = {recall}'.format(recall=recall_score(y_test, predictions)))
     print('F1 Score = {f1score}'.format(f1score=f1_score(y_test, predictions)))
+    print('ROC AUC = {roc_auc}'.format(roc_auc=roc_auc_score(y_test, predictions)))
     print(confusion_matrix(y_test, predictions))
     print(classification_report(y_test, predictions))
     print()
 
 
 def cross_val_scores(estimator, x, y, k_fold):
-    cv = cross_validate(estimator, x, y, cv=k_fold, scoring=['accuracy', 'precision', 'recall', 'f1'])
+    cv = cross_validate(estimator, x, y, cv=k_fold, scoring=['accuracy', 'precision', 'recall', 'f1', 'roc_auc'])
     print('{k_fold}-fold Cross validation scores:'.format(k_fold=k_fold))
     print('Accuracy score = {accuracy}(+/-{std})'.format(accuracy=cv['test_accuracy'].mean(),
                                                          std=cv['test_accuracy'].std() * 2))
@@ -94,6 +95,8 @@ def cross_val_scores(estimator, x, y, k_fold):
                                                            std=cv['test_precision'].std() * 2))
     print('Recall score = {recall}(+/-{std})'.format(recall=cv['test_recall'].mean(), std=cv['test_recall'].std() * 2))
     print('F1 Score = {f1score}(+/-{std})'.format(f1score=cv['test_f1'].mean(), std=cv['test_f1'].std() * 2))
+    print('ROC AUC Score = {roc_auc_score}(+/-{std})'.format(roc_auc_score=cv['test_roc_auc'].mean(),
+                                                             std=cv['test_f1'].std() * 2))
     print()
 
 
@@ -102,7 +105,10 @@ def roc_curve_plot(y_test, y_score):
     fpr = dict()
     tpr = dict()
     roc_auc = dict()
-    for i in range(2):
+    y_test = label_binarize(y_test, classes=[0, 1])
+    n_classes = y_test.shape[1]
+    y_score = label_binarize(y_score, classes=[0, 1])
+    for i in range(n_classes):
         fpr[i], tpr[i], _ = roc_curve(y_test[:, i], y_score[:, i])
         roc_auc[i] = auc(fpr[i], tpr[i])
 
@@ -110,7 +116,7 @@ def roc_curve_plot(y_test, y_score):
     plt.figure()
     lw = 2
     colors = cycle(['aqua', 'darkorange', 'cornflowerblue'])
-    for i, color in zip(range(2), colors):
+    for i, color in zip(range(n_classes), colors):
         plt.plot(fpr[i], tpr[i], color=color, lw=lw,
                  label='ROC curve of class {0} (area = {1:0.2f})'
                        ''.format(i, roc_auc[i]))
@@ -126,5 +132,5 @@ def roc_curve_plot(y_test, y_score):
 
 
 if __name__ == '__main__':
-    classification(pp='N', clf='ADA')
-    classification(clf='ADA', scale=True, best_features=False)
+    classification(pp='N', clf='GB')
+    classification(clf='GB', scale=True, best_features=False)
