@@ -92,7 +92,7 @@ def get_charts(x, y):
 def preprocessing(impute_values=True, remove_outliers=True, scale=True, best_features=True):
     x, y = read_data(csv_file='companydata.csv')
     if impute_values:
-        x = impute_missing_values(x)
+        x = impute_missing_values(x, strategy='mean')
 
     print('Dataset\'s rows with outliers: {shape}'.format(shape=x.shape[0]))
     if remove_outliers:

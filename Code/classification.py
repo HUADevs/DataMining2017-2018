@@ -1,4 +1,4 @@
-from preparation import read_data, impute_missing_values, preprocessing
+from Code.preparation import read_data, impute_missing_values, preprocessing
 from sklearn.ensemble import GradientBoostingClassifier, AdaBoostClassifier, BaggingClassifier, ExtraTreesClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.gaussian_process import GaussianProcessClassifier
@@ -17,14 +17,11 @@ from xgboost import XGBClassifier
 def classification(pp='Y', clf='Tree', random=0, impute_values=True, remove_outliers=True, scale=True,
                    best_features=True):
     classifiers = {
-        'Tree': DecisionTreeClassifier(criterion='entropy', splitter='best', max_depth=None, random_state=random,
-                                       min_samples_split=40, max_features=None, class_weight=None,
-                                       presort=True),
+        'Tree': DecisionTreeClassifier(criterion='entropy', random_state=random, min_samples_split=40),
         'KN': KNeighborsClassifier(n_neighbors=5),
         'RN': RadiusNeighborsClassifier(radius=1.0),
         'GP': GaussianProcessClassifier(),
-        'GB': GradientBoostingClassifier(loss='exponential', learning_rate=1.0, n_estimators=100,
-                                         criterion='friedman_mse', max_depth=3, random_state=0),
+        'GB': GradientBoostingClassifier(loss='exponential', n_estimators=1000, max_depth=2, random_state=random),
         'GNB': GaussianNB(),
         'MNB': MultinomialNB(),
         'BNB': BernoulliNB(),
@@ -39,7 +36,7 @@ def classification(pp='Y', clf='Tree', random=0, impute_values=True, remove_outl
         'ADA': AdaBoostClassifier(n_estimators=100, random_state=0),
         'BC': BaggingClassifier(n_estimators=10, random_state=0),
         'MLP': MLPClassifier(activation='logistic', learning_rate='adaptive'),
-        # 'EXGB': XGBClassifier()
+        'EXGB': XGBClassifier()
     }
 
     if pp == 'N':
@@ -84,5 +81,5 @@ def cross_val_scores(estimator, x, y, k_fold):
 
 
 if __name__ == '__main__':
-    classification(pp='N', clf='EXGB')
-    classification(clf='EXGB', scale=True, best_features=False)
+    # classification(pp='N', clf='GB')
+    classification(clf='GB', remove_outliers=True, scale=True, best_features=False)
