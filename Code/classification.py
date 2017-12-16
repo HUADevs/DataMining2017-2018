@@ -96,7 +96,7 @@ def cross_val_scores(estimator, x, y, k_fold):
     print('Recall score = {recall}(+/-{std})'.format(recall=cv['test_recall'].mean(), std=cv['test_recall'].std() * 2))
     print('F1 Score = {f1score}(+/-{std})'.format(f1score=cv['test_f1'].mean(), std=cv['test_f1'].std() * 2))
     print('ROC AUC Score = {roc_auc_score}(+/-{std})'.format(roc_auc_score=cv['test_roc_auc'].mean(),
-                                                             std=cv['test_f1'].std() * 2))
+                                                             std=cv['test_roc_auc'].std() * 2))
     print()
 
 
@@ -132,5 +132,5 @@ def roc_curve_plot(y_test, y_score):
 
 
 if __name__ == '__main__':
-    classification(pp='N', clf='GB')
-    classification(clf='GB', scale=True, best_features=False)
+    classification(pp='N', clf='EXGB')
+    classification(clf='EXGB', scale=True, best_features=False)
