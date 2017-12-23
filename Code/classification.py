@@ -1,10 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from itertools import cycle
+import pandas as pd
 
 from sklearn.preprocessing import label_binarize
 
-from Code.preparation import read_data, impute_missing_values, preprocessing
+from Code.preparation import read_data, impute_missing_values, preprocessing, preprocessing_unknown
 from sklearn.ensemble import GradientBoostingClassifier, AdaBoostClassifier, BaggingClassifier, ExtraTreesClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.gaussian_process import GaussianProcessClassifier
@@ -28,7 +29,7 @@ def classification(pp='Y', clf='Tree', random=0, impute_values=True, remove_outl
         x, y = read_data(csv_file='companydata.csv')
         x = impute_missing_values(x)
     else:
-        x, y = preprocessing(impute_values, remove_outliers, scale, best_features)
+         x,y = preprocessing(impute_values, remove_outliers, scale, best_features)
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=0)
 
     classifiers = {
@@ -48,7 +49,7 @@ def classification(pp='Y', clf='Tree', random=0, impute_values=True, remove_outl
         'LSVC': LinearSVC(),
         'SGDC': SGDClassifier(random_state=0),
         'DTR': DecisionTreeRegressor(random_state=0, presort=True),
-        'ADA': AdaBoostClassifier(n_estimators=800, random_state=0),
+        'ADA': AdaBoostClassifier(n_estimators=500, random_state=0),
         'BC': BaggingClassifier(n_estimators=50, random_state=0),
         'MLP': MLPClassifier(activation='logistic', learning_rate='adaptive'),
         'EXGB': XGBClassifier(max_depth=3, learning_rate=0.1, n_estimators=1000, objective="binary:logistic",
@@ -58,7 +59,7 @@ def classification(pp='Y', clf='Tree', random=0, impute_values=True, remove_outl
 
     print(np.sum(y_train == 0), np.sum(y_train == 1), end='\n')
     est = classifiers[clf]
-    if (clf == 'EXGB'):
+    if clf == 'EXGB':
         est.fit(x_train, y_train, eval_set=[(x_train, y_train), (x_test, y_test)], eval_metric='auc', verbose=False)
     else:
         est.fit(x_train, y_train)
@@ -94,7 +95,7 @@ def cross_val_scores(estimator, x, y, k_fold):
     print('Recall score = {recall}(+/-{std})'.format(recall=cv['test_recall'].mean(), std=cv['test_recall'].std() * 2))
     print('F1 Score = {f1score}(+/-{std})'.format(f1score=cv['test_f1'].mean(), std=cv['test_f1'].std() * 2))
     print('ROC AUC Score = {roc_auc_score}(+/-{std})'.format(roc_auc_score=cv['test_roc_auc'].mean(),
-                                                             std=cv['test_f1'].std() * 2))
+                                                             std=cv['test_roc_auc'].std() * 2))
     print()
 
 
@@ -128,7 +129,25 @@ def roc_curve_plot(y_test, y_score):
     plt.legend(loc="lower right")
     plt.show()
 
+def predict_unknown():
+    x_test = preprocessing_unknown()
+    x, y = preprocessing(True, True, True, False)
+    clf = XGBClassifier(max_depth=3, learning_rate=0.1, n_estimators=1000, objective="binary:logistic",
+                              min_child_weight=1, gamma=0, max_delta_step=0,
+                              scale_pos_weight=float(np.sum(y_train == 0)) / np.sum(y_train == 1), seed=0)
+    clf.fit(x, y, eval_set=[(x, y), (x_test, y_test)], eval_metric='auc', verbose=False) #prepei logika na vgoun ta y_train,y_test apo edw
+    predictions = clf.predict(x_test)
+    pd.DataFrame(predictions, columns=['predictions']).to_csv('prediction.csv')
+    prd = pd.read_csv(csv_file='prediction.csv')
+    # known = pd.read_csv(csv_file='companydata.csv')
+    # y = known['X65']
+    # y.append(prd)
+    # print(y)
+    print(prd)
+
+
 
 if __name__ == '__main__':
-    classification(pp='N', clf='GB')
-    classification(clf='GB', scale=True, best_features=False)
+    #classification(pp='N', clf='EXGB')
+    #classification(clf='EXGB', scale=True, best_features=False)
+    predict_unknown()
