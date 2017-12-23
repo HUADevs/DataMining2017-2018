@@ -32,12 +32,11 @@ def classification(pp='Y', clf='Tree', random=0, impute_values=True, remove_outl
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=0)
 
     classifiers = {
-        'Tree': DecisionTreeClassifier(criterion='entropy', splitter='best', max_depth=None, random_state=random,
-                                       min_samples_split=40, presort=True),
+        'Tree': DecisionTreeClassifier(criterion='entropy', random_state=random, min_samples_split=40),
         'KN': KNeighborsClassifier(n_neighbors=5),
         'RN': RadiusNeighborsClassifier(radius=1.0),
         'GP': GaussianProcessClassifier(),
-        'GB': GradientBoostingClassifier(loss='exponential', n_estimators=1000, max_depth=3, random_state=0),
+        'GB': GradientBoostingClassifier(loss='exponential', n_estimators=1000, max_depth=3, random_state=random),
         'GNB': GaussianNB(),
         'MNB': MultinomialNB(),
         'BNB': BernoulliNB(),
@@ -66,7 +65,6 @@ def classification(pp='Y', clf='Tree', random=0, impute_values=True, remove_outl
     predictions = est.predict(x_test)
     scores(y_test, predictions, pp, clf)
     cross_val_scores(est, x, y, 10)
-    roc_curve_plot(y_test, predictions)
 
 
 def scores(y_test, predictions, pp, clf):
