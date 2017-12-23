@@ -49,7 +49,7 @@ def classification(pp='Y', clf='Tree', random=0, impute_values=True, remove_outl
         'LSVC': LinearSVC(),
         'SGDC': SGDClassifier(random_state=0),
         'DTR': DecisionTreeRegressor(random_state=0, presort=True),
-        'ADA': AdaBoostClassifier(n_estimators=800, random_state=0),
+        'ADA': AdaBoostClassifier(n_estimators=500, random_state=0),
         'BC': BaggingClassifier(n_estimators=50, random_state=0),
         'MLP': MLPClassifier(activation='logistic', learning_rate='adaptive'),
         'EXGB': XGBClassifier(max_depth=3, learning_rate=0.1, n_estimators=1000, objective="binary:logistic",
@@ -59,7 +59,7 @@ def classification(pp='Y', clf='Tree', random=0, impute_values=True, remove_outl
 
     print(np.sum(y_train == 0), np.sum(y_train == 1), end='\n')
     est = classifiers[clf]
-    if (clf == 'EXGB'):
+    if clf == 'EXGB':
         est.fit(x_train, y_train, eval_set=[(x_train, y_train), (x_test, y_test)], eval_metric='auc', verbose=False)
     else:
         est.fit(x_train, y_train)
