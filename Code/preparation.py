@@ -116,10 +116,10 @@ def preprocessing(impute_values=True, remove_outliers=True, scale=True, best_fea
 
 
 def preprocessing_unknown():
-    x, y = read_data(csv_file='companydata.csv')
-    #x = pd.read_csv('test_unlabeled.csv', na_values='?')
+    #x, y = read_data(csv_file='companydata.csv')
+    x = pd.read_csv('test_unlabeled.csv', na_values='?')
     x = impute_missing_values(x, strategy='mean')
-    x, _ = detect_and_remove_outliers(x, y)
+    #x, _ = detect_and_remove_outliers(x, y)
     x = normalize_data(x, scaler='Standard')
     return x
 

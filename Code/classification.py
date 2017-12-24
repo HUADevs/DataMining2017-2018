@@ -29,8 +29,8 @@ def classification(pp='Y', clf='Tree', random=0, impute_values=True, remove_outl
         x, y = read_data(csv_file='companydata.csv')
         x = impute_missing_values(x)
     else:
-         x,y = preprocessing(impute_values, remove_outliers, scale, best_features)
-    print(np.sum(y == 0), np.sum(y== 1), end='\n')
+        x, y = preprocessing(impute_values, remove_outliers, scale, best_features)
+    print(np.sum(y == 0), np.sum(y == 1), end='\n')
 
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=0)
 
@@ -134,17 +134,12 @@ def roc_curve_plot(y_test, y_score):
     plt.show()
 
 
-def exponentialLoss(y, pred):
-    df = -y * np.exp(-y * pred)
-    hess = np.exp(-y * pred)
-    return df, hess
-
 def predict_unknown():
     x_test = preprocessing_unknown()
-    x, y = preprocessing(True, True, True, False)
+    x, y = preprocessing(True, False, True, False)
     clf = XGBClassifier(max_depth=3, learning_rate=0.1, n_estimators=1000, objective="binary:logistic",
-                              min_child_weight=2, gamma=0, max_delta_step=0,
-                              scale_pos_weight=float(np.sum(y == 0)) / np.sum(y == 1), seed=0)
+                        min_child_weight=1, gamma=0, max_delta_step=0,
+                        scale_pos_weight=float(np.sum(y == 0)) / np.sum(y == 1), seed=0)
     clf.fit(x, y, eval_set=[(x, y)], eval_metric='auc', verbose=False)
     predictions = clf.predict(x_test)
     pd.Series(predictions).to_csv('prediction.csv')
@@ -157,6 +152,6 @@ def predict_unknown():
 
 
 if __name__ == '__main__':
-    #classification(pp='N', clf='EXGB')
-    #classification(clf='EXGB', scale=True, remove_outliers=True, best_features=False)
+    # classification(pp='N', clf='EXGB')
+    # classification(clf='EXGB', scale=True, remove_outliers=False, best_features=False)
     predict_unknown()
