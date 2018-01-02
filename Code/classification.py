@@ -35,11 +35,12 @@ def classification(pp='Y', clf='Tree', random=0, impute_values=True, remove_outl
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=0)
 
     classifiers = {
-        'Tree': DecisionTreeClassifier(criterion='entropy', random_state=random, min_samples_split=40),
+        'Tree': DecisionTreeClassifier(criterion='entropy', splitter='best', max_depth=None, random_state=random,
+                                       min_samples_split=40, presort=True),
         'KN': KNeighborsClassifier(n_neighbors=5),
         'RN': RadiusNeighborsClassifier(radius=1.0),
         'GP': GaussianProcessClassifier(),
-        'GB': GradientBoostingClassifier(loss='exponential', n_estimators=1000, max_depth=3, random_state=random),
+        'GB': GradientBoostingClassifier(loss='deviance', n_estimators=200, max_depth=3, random_state=0),
         'GNB': GaussianNB(),
         'MNB': MultinomialNB(),
         'BNB': BernoulliNB(),
@@ -54,20 +55,31 @@ def classification(pp='Y', clf='Tree', random=0, impute_values=True, remove_outl
         'ADA': AdaBoostClassifier(n_estimators=500, random_state=0),
         'BC': BaggingClassifier(n_estimators=50, random_state=0),
         'MLP': MLPClassifier(activation='logistic', learning_rate='adaptive'),
-        'EXGB': XGBClassifier(max_depth=3, learning_rate=0.1, n_estimators=1000, objective="binary:logistic",
-                              min_child_weight=1, gamma=0, max_delta_step=0,
-                              scale_pos_weight=float(np.sum(y_train == 0)) / np.sum(y_train == 1), seed=0)
+        'EXGB': XGBClassifier(learning_rate=0.1,
+                              n_estimators=1000,
+                              max_depth=4,
+                              min_child_weight=6,
+                              gamma=0,
+                              subsample=0.8,
+                              colsample_bytree=0.8,
+                              reg_alpha=0.005,
+                              objective='binary:logistic',
+                              scale_pos_weight=1,
+                              seed=26)
     }
 
     print(np.sum(y_train == 0), np.sum(y_train == 1), end='\n')
     est = classifiers[clf]
     if clf == 'EXGB':
-        est.fit(x_train, y_train, eval_set=[(x_train, y_train), (x_test, y_test)], eval_metric='auc', verbose=False)
+        est.fit(x_train, y_train, eval_set=[(x_train, y_train), (x_test, y_test)], early_stopping_rounds=142,
+                eval_metric=['error', 'auc'], verbose=True)
     else:
         est.fit(x_train, y_train)
     predictions = est.predict(x_test)
     scores(y_test, predictions, pp, clf)
     cross_val_scores(est, x, y, 10)
+    roc_curve_plot(y_test, predictions)
+    plotting_evaluations(est)
 
 
 def scores(y_test, predictions, pp, clf):
@@ -99,6 +111,29 @@ def cross_val_scores(estimator, x, y, k_fold):
     print('ROC AUC Score = {roc_auc_score}(+/-{std})'.format(roc_auc_score=cv['test_roc_auc'].mean(),
                                                              std=cv['test_roc_auc'].std() * 2))
     print()
+
+
+def plotting_evaluations(model):
+    # retrieve performance metrics
+    results = model.evals_result()
+    epochs = len(results['validation_0']['error'])
+    x_axis = range(0, epochs)
+    # plot log loss
+    fig, ax = plt.subplots()
+    ax.plot(x_axis, results['validation_0']['auc'], label='Train')
+    ax.plot(x_axis, results['validation_1']['auc'], label='Test')
+    ax.legend()
+    plt.ylabel('Area Under Curve')
+    plt.title('XGBoost AUC')
+    plt.show()
+    # plot classification error
+    fig, ax = plt.subplots()
+    ax.plot(x_axis, results['validation_0']['error'], label='Train')
+    ax.plot(x_axis, results['validation_1']['error'], label='Test')
+    ax.legend()
+    plt.ylabel('Classification Error')
+    plt.title('XGBoost Classification Error')
+    plt.show()
 
 
 def roc_curve_plot(y_test, y_score):
@@ -135,10 +170,18 @@ def roc_curve_plot(y_test, y_score):
 def predict_unknown():
     x_test = preprocessing_unknown()
     x, y = preprocessing(True, False, True, False)
-    clf = XGBClassifier(max_depth=3, learning_rate=0.1, n_estimators=1000, objective="binary:logistic",
-                        min_child_weight=1, gamma=0, max_delta_step=0,
-                        scale_pos_weight=float(np.sum(y == 0)) / np.sum(y == 1), seed=0)
-    clf.fit(x, y, eval_set=[(x, y)], eval_metric='auc', verbose=False)
+    clf = XGBClassifier(learning_rate=0.1,
+                        n_estimators=1000,
+                        max_depth=4,
+                        min_child_weight=6,
+                        gamma=0,
+                        subsample=0.8,
+                        colsample_bytree=0.8,
+                        reg_alpha=0.005,
+                        objective='binary:logistic',
+                        scale_pos_weight=1,
+                        seed=26)
+    clf.fit(x, y, eval_set=[(x, y)], eval_metric=['error', 'auc'], early_stopping_rounds=142, verbose=True)
     predictions = clf.predict(x_test)
     pd.Series(predictions).to_csv('prediction.csv')
     prd = pd.read_csv('prediction.csv')
@@ -151,5 +194,5 @@ def predict_unknown():
 
 if __name__ == '__main__':
     # classification(pp='N', clf='EXGB')
-    # classification(clf='EXGB', scale=True, remove_outliers=False, best_features=False)
+    classification(clf='EXGB', scale=True, remove_outliers=False, best_features=False)
     predict_unknown()
