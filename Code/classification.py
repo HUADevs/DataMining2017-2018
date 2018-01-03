@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from itertools import cycle
 import pandas as pd
+from sklearn.model_selection import GridSearchCV
 
 from sklearn.preprocessing import label_binarize
 
@@ -40,7 +41,8 @@ def classification(pp='Y', clf='Tree', random=0, impute_values=True, remove_outl
         'KN': KNeighborsClassifier(n_neighbors=5),
         'RN': RadiusNeighborsClassifier(radius=1.0),
         'GP': GaussianProcessClassifier(),
-        'GB': GradientBoostingClassifier(loss='deviance', n_estimators=200, max_depth=3, random_state=0),
+        'GB': GradientBoostingClassifier(learning_rate=0.1, min_samples_split=130, min_samples_leaf=50, max_depth=4,
+                                         max_features=15, subsample=0.9, random_state=10, n_estimators=140),
         'GNB': GaussianNB(),
         'MNB': MultinomialNB(),
         'BNB': BernoulliNB(),
@@ -78,8 +80,9 @@ def classification(pp='Y', clf='Tree', random=0, impute_values=True, remove_outl
     predictions = est.predict(x_test)
     scores(y_test, predictions, pp, clf)
     cross_val_scores(est, x, y, 10)
-    roc_curve_plot(y_test, predictions)
-    plotting_evaluations(est)
+    # roc_curve_plot(y_test, predictions)
+    # plotting_evaluations(est)
+    grid_search(est, x_train, y_train, 10)
 
 
 def scores(y_test, predictions, pp, clf):
@@ -136,6 +139,21 @@ def plotting_evaluations(model):
     plt.show()
 
 
+def grid_search(estimator, x_train, y_train, cv_folds=5):
+    # tune number of estimators
+    param_test1 = {'n_estimators': range(80, 181, 10)}
+    # tune tree-specific parameters
+    param_test2 = {'max_depth': range(3, 5, 1), 'min_samples_split': range(200, 1001, 200)}
+    param_test3 = {'min_samples_split': range(50, 151, 10), 'min_samples_leaf': range(30, 71, 10)}
+    param_test4 = {'max_features': range(7, 20, 2)}
+    param_test5 = {'subsample': np.arange(0.6, 1.0, 0.05)}
+    gsearch = GridSearchCV(estimator=estimator, param_grid=param_test5, scoring='roc_auc', n_jobs=-1, iid=False,
+                           cv=cv_folds)
+    gsearch.fit(x_train, y_train)
+    print(100 * "=")
+    print("\nBest Params: {1}\nBest score: {2}".format(gsearch.grid_scores_, gsearch.best_params_, gsearch.best_score_))
+
+
 def roc_curve_plot(y_test, y_score):
     # Compute ROC curve and ROC area for each class
     fpr = dict()
@@ -170,18 +188,9 @@ def roc_curve_plot(y_test, y_score):
 def predict_unknown():
     x_test = preprocessing_unknown()
     x, y = preprocessing(True, False, True, False)
-    clf = XGBClassifier(learning_rate=0.1,
-                        n_estimators=1000,
-                        max_depth=4,
-                        min_child_weight=6,
-                        gamma=0,
-                        subsample=0.8,
-                        colsample_bytree=0.8,
-                        reg_alpha=0.005,
-                        objective='binary:logistic',
-                        scale_pos_weight=1,
-                        seed=26)
-    clf.fit(x, y, eval_set=[(x, y)], eval_metric=['error', 'auc'], early_stopping_rounds=142, verbose=True)
+    clf = GradientBoostingClassifier(learning_rate=0.1, min_samples_split=110, min_samples_leaf=50, max_depth=4,
+                                     max_features=15, subsample=0.9, random_state=10, n_estimators=130)
+    clf.fit(x, y)
     predictions = clf.predict(x_test)
     pd.Series(predictions).to_csv('prediction.csv')
     prd = pd.read_csv('prediction.csv')
@@ -194,5 +203,5 @@ def predict_unknown():
 
 if __name__ == '__main__':
     # classification(pp='N', clf='EXGB')
-    classification(clf='EXGB', scale=True, remove_outliers=False, best_features=False)
-    predict_unknown()
+    classification(clf='GB', scale=True, remove_outliers=False, best_features=False)
+    # predict_unknown()
