@@ -77,7 +77,7 @@ def classification(pp='Y', clf='Tree', impute_values=True, remove_outliers=True,
     else:
         est.fit(x_train, y_train)
     predictions = est.predict(x_test)
-    scores(y_test, predictions, pp, clf)
+    # scores(y_test, predictions, pp, clf)
     cross_val_scores(est, x, y, 10)
     # roc_curve_plot(y_test, predictions)
     plotting_evaluations(est)
@@ -219,10 +219,10 @@ def predict_probability(estimator, x):
     probabilities = estimator.predict_proba(x)
     srs = pd.Series(probabilities[:, 1], index=x.index.values)
     sorted_srs = srs.sort_values(ascending=False)
-    sorted_srs.to_csv('prediction_probabilities1.csv')
+    sorted_srs.to_csv('prediction_probabilities.csv')
 
 
 if __name__ == '__main__':
     # classification(pp='N', clf='EXGB')
-    # classification(clf='EXGB', scale=True, remove_outliers=False, best_features=False)
-    predict_unknown()
+    classification(clf='EXGB', scale=True, remove_outliers=False, best_features=False)
+    # predict_unknown()
