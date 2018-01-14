@@ -219,6 +219,7 @@ def predict_probability(estimator, x):
     probabilities = estimator.predict_proba(x)
     srs = pd.Series(probabilities[:, 1], index=x.index.values)
     sorted_srs = srs.sort_values(ascending=False)
+    sorted_srs.index = sorted_srs.index + 1
     sorted_srs.to_csv('prediction_probabilities.csv')
 
 
