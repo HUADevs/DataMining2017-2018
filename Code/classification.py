@@ -41,7 +41,7 @@ def classification(pp='Y', clf='Tree', impute_values=True, remove_outliers=True,
         'RN': RadiusNeighborsClassifier(radius=1.0),
         'GP': GaussianProcessClassifier(),
         'GB': GradientBoostingClassifier(learning_rate=0.1, min_samples_split=50, min_samples_leaf=25, max_depth=4,
-                                         max_features=15, subsample=0.9, n_estimators=140),
+                                         subsample=0.9, n_estimators=140, max_features=10),
         'GNB': GaussianNB(),
         'MNB': MultinomialNB(),
         'BNB': BernoulliNB(),
@@ -80,7 +80,7 @@ def classification(pp='Y', clf='Tree', impute_values=True, remove_outliers=True,
     # scores(y_test, predictions, pp, clf)
     cross_val_scores(est, x, y, 10)
     # roc_curve_plot(y_test, predictions)
-    plotting_evaluations(est)
+    # plotting_evaluations(est)
     # grid_search(est, x_train, y_train, 5)
 
 
@@ -224,5 +224,5 @@ def predict_probability(estimator, x):
 
 if __name__ == '__main__':
     # classification(pp='N', clf='EXGB')
-    classification(clf='EXGB', scale=True, remove_outliers=False, best_features=False)
+    classification(clf='GB', scale=True, remove_outliers=False, best_features=True)
     # predict_unknown()

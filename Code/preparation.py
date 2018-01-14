@@ -64,7 +64,7 @@ def normalize_data(x, scaler='Standard'):
     return x
 
 
-def select_best_features(x, y, n_features=5, method='chi2'):
+def select_best_features(x, y, n_features=10, method='chi2'):
     methods = {
         # Compute chi-squared stats between each non-negative feature and class
         'chi2': SelectKBest(chi2, k=n_features),
@@ -105,8 +105,9 @@ def preprocessing(impute_values=True, remove_outliers=True, scale=True, best_fea
 
     print('Dataset\'s columns before feature selection: {shape}'.format(shape=x.shape[1]))
     if best_features:
-        x = select_best_features(x, y, n_features=20, method='mutual_info_classif')  # methods={chi2, f_classif, mutual_info_classif}
+        x = select_best_features(x, y, method='mutual_info_classif')  # methods={chi2, f_classif, mutual_info_classif}
         print('Dataset\'s columns after feature selection: {shape}'.format(shape=x.shape[1]))
+        print('{n} Best features: {features}'.format(n=10, features=x.columns.values))
 
     # print(x.head())
     # print(type(x), type(y))
