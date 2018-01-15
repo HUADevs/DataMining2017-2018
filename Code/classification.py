@@ -183,36 +183,18 @@ def roc_curve_plot(y_test, y_score):
     plt.legend(loc="lower right")
     plt.show()
 
-
+#predicts unknown data (creates prediction and prediction_proba csv)
 def predict_unknown():
     x_test = preprocessing_unknown()
     x, y = preprocessing(True, False, True, False)
-    # clf = XGBClassifier(learning_rate=0.1,
-    #                     n_estimators=1000,
-    #                     max_depth=4,
-    #                     min_child_weight=6,
-    #                     gamma=0,
-    #                     subsample=0.8,
-    #                     colsample_bytree=0.8,
-    #                     reg_alpha=0.005,
-    #                     objective='binary:logistic',
-    #                     scale_pos_weight=1,
-    #                     seed=26)
-    # clf.fit(x, y, eval_set=[(x, y)], early_stopping_rounds=142,
-    #         eval_metric=['error', 'auc'], verbose=True)
-
     clf = GradientBoostingClassifier(learning_rate=0.1, min_samples_split=50, min_samples_leaf=25, max_depth=4,
                                      max_features=15, subsample=0.9, n_estimators=140)
     clf.fit(x, y)
     predictions = clf.predict(x_test)
-    pd.Series(predictions).to_csv('prediction.csv')
-    prd = pd.read_csv('prediction.csv')
+    prd = pd.Series(predictions)
+    prd.index= prd.index+1
+    pd.Series(prd).to_csv('prediction.csv')
     predict_probability(clf, x_test)
-    # known = pd.read_csv('companydata.csv')
-    # y = known['X65']
-    # y.append(prd)
-    # print(y)
-    print(prd)
 
 
 def predict_probability(estimator, x):
@@ -225,5 +207,5 @@ def predict_probability(estimator, x):
 
 if __name__ == '__main__':
     # classification(pp='N', clf='EXGB')
-    classification(clf='GB', scale=True, remove_outliers=False, best_features=True)
-    # predict_unknown()
+    # classification(clf='GB', scale=True, remove_outliers=False, best_features=True)
+    predict_unknown()
